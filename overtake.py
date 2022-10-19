@@ -275,8 +275,8 @@ class FOT:
         self.scan_obs = []
 
         scan_range = 1080
-        i=1
-        d_group = 1.5 # 1.5
+        i=1 # 1 
+        d_group = 1 # 1.5
         d_pi = 0.00628
         while(scan_range - 1>i):
             start_idx_temp = i
@@ -329,6 +329,72 @@ class FOT:
                 obs_temp[5] = self.dect_obs[i][5]
                 self.len_obs.append(obs_temp)
 
+
+        theta = (int((self.len_obs[0][1] + self.len_obs[0][0])/2) - 180) * (4.7/1080)
+        _x = self.len_obs[0][5] * np.cos(theta)
+        _y = self.len_obs[0][5] * np.sin(theta)
+
+        return _x, _y
+
+    def define_obstacles(self, scan):
+        obstacles = []
+        
+        i = 299
+        d_i = 0
+        while True:
+            if (i >= 799):
+                break
+            if scan[i] < 6.0:
+                
+                start_temp = scan[i]
+                start_idx_temp = i
+                end_temp = start_temp
+                end_idx_temp = i
+                max_temp = scan[i]
+                max_idx_temp = i
+                obstacle_count = 1
+                
+                while ((scan[i] < 6.0) and (i+1 < 799)):#self.scan_range
+                    i += 1
+                    end_temp += scan[i]
+                    obstacle_count += 1
+                    if scan[i] > max_temp:
+                        max_temp = scan[i]
+                        max_idx_temp = i
+                if scan[i] < 6.0:
+                    i += 1   
+                end_idx_temp = i
+                
+                # print('start:', start_idx_temp,'end:',end_idx_temp, end=" ")
+
+
+                distance_obstacle = end_temp/obstacle_count
+                
+                
+                a_k = ((6.0 - distance_obstacle)*np.exp(1/2))
+
+                angle_obstacle = (end_idx_temp - start_idx_temp)*0.00435
+
+                sigma_obstacle = np.arctan2((distance_obstacle * np.tan(angle_obstacle/2) + (0.3302/2)), distance_obstacle)
+
+                angle_obstacle_center = (int)((end_idx_temp - start_idx_temp)/2) + start_idx_temp 
+                angle_obstacle_center = angle_obstacle_center - 540
+
+                obstacle_inf = [angle_obstacle_center, sigma_obstacle, a_k]
+                
+                # print('angle_center',angle_obstacle_center,end=' ')
+                # print(sigma_obstacle)
+                obstacles.append(obstacle_inf)
+        
+            
+            i += 1
+
+        # print(len(obstacles))
+        # print()
+
+        return obstacles
+
+
             
 
 
@@ -341,18 +407,10 @@ class FOT:
 
 
         # obstacle 위치 업데이트
-        self.obs_dect(ranges)
+        ob = self.obs_dect(ranges)
+        # ob = self.define_obstacles(ranges)
 
-        # print(self.len_obs)
-
-        actor_index = self.len_obs[0][3] + (self.len_obs[0][1] - self.len_obs[0][3])/2
-        actor_distance = ranges[int(actor_index)]
-        actor_angel = 0.25 * (539-int(actor_index))
-
-        actor_x = actor_distance * np.sin(actor_angel)
-        actor_y = actor_distance * np.cos(actor_angel)
-        print(actor_x, actor_y)
-
+        print(ob)
 
 
         
