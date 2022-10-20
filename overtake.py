@@ -3,8 +3,8 @@ import math
 import copy
 import math
 
-# from QuinticPolynomialsPlanner.quintic_polynomials_planner import QuinticPolynomial
-# from CubicSpline import cubic_spline_planner
+from pkg.quintic_polynomials_planner import QuinticPolynomial
+from pkg.cubic_spline_planner import CubicSpline2D
 
 
 # Parameter
@@ -19,7 +19,7 @@ MIN_T = 4.0  # min prediction time [m]
 TARGET_SPEED = 30.0 / 3.6  # target speed [m/s]
 D_T_S = 5.0 / 3.6  # target speed sampling length [m/s]
 N_S_SAMPLE = 1  # sampling number of target speed
-ROBOT_RADIUS = 2.0  # robot radius [m]
+ROBOT_RADIUS = 0.3302  # robot radius [m]
 
 # cost weights
 K_J = 0.1
@@ -30,208 +30,208 @@ K_LON = 1.0
 
 
 
-# class QuarticPolynomial:
+class QuarticPolynomial:
 
-#     def __init__(self, xs, vxs, axs, vxe, axe, time):
-#         # calc coefficient of quartic polynomial
+    def __init__(self, xs, vxs, axs, vxe, axe, time):
+        # calc coefficient of quartic polynomial
 
-#         self.a0 = xs
-#         self.a1 = vxs
-#         self.a2 = axs / 2.0
+        self.a0 = xs
+        self.a1 = vxs
+        self.a2 = axs / 2.0
 
-#         A = np.array([[3 * time ** 2, 4 * time ** 3],
-#                       [6 * time, 12 * time ** 2]])
-#         b = np.array([vxe - self.a1 - 2 * self.a2 * time,
-#                       axe - 2 * self.a2])
-#         x = np.linalg.solve(A, b)
+        A = np.array([[3 * time ** 2, 4 * time ** 3],
+                      [6 * time, 12 * time ** 2]])
+        b = np.array([vxe - self.a1 - 2 * self.a2 * time,
+                      axe - 2 * self.a2])
+        x = np.linalg.solve(A, b)
 
-#         self.a3 = x[0]
-#         self.a4 = x[1]
+        self.a3 = x[0]
+        self.a4 = x[1]
 
-#     def calc_point(self, t):
-#         xt = self.a0 + self.a1 * t + self.a2 * t ** 2 + \
-#              self.a3 * t ** 3 + self.a4 * t ** 4
+    def calc_point(self, t):
+        xt = self.a0 + self.a1 * t + self.a2 * t ** 2 + \
+             self.a3 * t ** 3 + self.a4 * t ** 4
 
-#         return xt
+        return xt
 
-#     def calc_first_derivative(self, t):
-#         xt = self.a1 + 2 * self.a2 * t + \
-#              3 * self.a3 * t ** 2 + 4 * self.a4 * t ** 3
+    def calc_first_derivative(self, t):
+        xt = self.a1 + 2 * self.a2 * t + \
+             3 * self.a3 * t ** 2 + 4 * self.a4 * t ** 3
 
-#         return xt
+        return xt
 
-#     def calc_second_derivative(self, t):
-#         xt = 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2
+    def calc_second_derivative(self, t):
+        xt = 2 * self.a2 + 6 * self.a3 * t + 12 * self.a4 * t ** 2
 
-#         return xt
+        return xt
 
-#     def calc_third_derivative(self, t):
-#         xt = 6 * self.a3 + 24 * self.a4 * t
+    def calc_third_derivative(self, t):
+        xt = 6 * self.a3 + 24 * self.a4 * t
 
-#         return xt
-
-
-# class FrenetPath:
-
-#     def __init__(self):
-#         self.t = []
-#         self.d = []
-#         self.d_d = []
-#         self.d_dd = []
-#         self.d_ddd = []
-#         self.s = []
-#         self.s_d = []
-#         self.s_dd = []
-#         self.s_ddd = []
-#         self.cd = 0.0
-#         self.cv = 0.0
-#         self.cf = 0.0
-
-#         self.x = []
-#         self.y = []
-#         self.yaw = []
-#         self.ds = []
-#         self.c = []
+        return xt
 
 
-# def calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0):
-#     frenet_paths = []
+class FrenetPath:
 
-#     # generate path to each offset goal
-#     for di in np.arange(-MAX_ROAD_WIDTH, MAX_ROAD_WIDTH, D_ROAD_W):
+    def __init__(self):
+        self.t = []
+        self.d = []
+        self.d_d = []
+        self.d_dd = []
+        self.d_ddd = []
+        self.s = []
+        self.s_d = []
+        self.s_dd = []
+        self.s_ddd = []
+        self.cd = 0.0
+        self.cv = 0.0
+        self.cf = 0.0
 
-#         # Lateral motion planning
-#         for Ti in np.arange(MIN_T, MAX_T, DT):
-#             fp = FrenetPath()
-
-#             # lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti)
-#             lat_qp = QuinticPolynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti)
-
-#             fp.t = [t for t in np.arange(0.0, Ti, DT)]
-#             fp.d = [lat_qp.calc_point(t) for t in fp.t]
-#             fp.d_d = [lat_qp.calc_first_derivative(t) for t in fp.t]
-#             fp.d_dd = [lat_qp.calc_second_derivative(t) for t in fp.t]
-#             fp.d_ddd = [lat_qp.calc_third_derivative(t) for t in fp.t]
-
-#             # Longitudinal motion planning (Velocity keeping)
-#             for tv in np.arange(TARGET_SPEED - D_T_S * N_S_SAMPLE,
-#                                 TARGET_SPEED + D_T_S * N_S_SAMPLE, D_T_S):
-#                 tfp = copy.deepcopy(fp)
-#                 lon_qp = QuarticPolynomial(s0, c_speed, 0.0, tv, 0.0, Ti)
-
-#                 tfp.s = [lon_qp.calc_point(t) for t in fp.t]
-#                 tfp.s_d = [lon_qp.calc_first_derivative(t) for t in fp.t]
-#                 tfp.s_dd = [lon_qp.calc_second_derivative(t) for t in fp.t]
-#                 tfp.s_ddd = [lon_qp.calc_third_derivative(t) for t in fp.t]
-
-#                 Jp = sum(np.power(tfp.d_ddd, 2))  # square of jerk
-#                 Js = sum(np.power(tfp.s_ddd, 2))  # square of jerk
-
-#                 # square of diff from target speed
-#                 ds = (TARGET_SPEED - tfp.s_d[-1]) ** 2
-
-#                 tfp.cd = K_J * Jp + K_T * Ti + K_D * tfp.d[-1] ** 2
-#                 tfp.cv = K_J * Js + K_T * Ti + K_D * ds
-#                 tfp.cf = K_LAT * tfp.cd + K_LON * tfp.cv
-
-#                 frenet_paths.append(tfp)
-
-#     return frenet_paths
+        self.x = []
+        self.y = []
+        self.yaw = []
+        self.ds = []
+        self.c = []
 
 
-# def calc_global_paths(fplist, csp):
-#     for fp in fplist:
+def calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0):
+    frenet_paths = []
 
-#         # calc global positions
-#         for i in range(len(fp.s)):
-#             ix, iy = csp.calc_position(fp.s[i])
-#             if ix is None:
-#                 break
-#             i_yaw = csp.calc_yaw(fp.s[i])
-#             di = fp.d[i]
-#             fx = ix + di * math.cos(i_yaw + math.pi / 2.0)
-#             fy = iy + di * math.sin(i_yaw + math.pi / 2.0)
-#             fp.x.append(fx)
-#             fp.y.append(fy)
+    # generate path to each offset goal
+    for di in np.arange(-MAX_ROAD_WIDTH, MAX_ROAD_WIDTH, D_ROAD_W):
 
-#         # calc yaw and ds
-#         for i in range(len(fp.x) - 1):
-#             dx = fp.x[i + 1] - fp.x[i]
-#             dy = fp.y[i + 1] - fp.y[i]
-#             fp.yaw.append(math.atan2(dy, dx))
-#             fp.ds.append(math.hypot(dx, dy))
+        # Lateral motion planning
+        for Ti in np.arange(MIN_T, MAX_T, DT):
+            fp = FrenetPath()
 
-#         fp.yaw.append(fp.yaw[-1])
-#         fp.ds.append(fp.ds[-1])
+            # lat_qp = quintic_polynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti)
+            lat_qp = QuinticPolynomial(c_d, c_d_d, c_d_dd, di, 0.0, 0.0, Ti)
 
-#         # calc curvature
-#         for i in range(len(fp.yaw) - 1):
-#             fp.c.append((fp.yaw[i + 1] - fp.yaw[i]) / fp.ds[i])
+            fp.t = [t for t in np.arange(0.0, Ti, DT)]
+            fp.d = [lat_qp.calc_point(t) for t in fp.t]
+            fp.d_d = [lat_qp.calc_first_derivative(t) for t in fp.t]
+            fp.d_dd = [lat_qp.calc_second_derivative(t) for t in fp.t]
+            fp.d_ddd = [lat_qp.calc_third_derivative(t) for t in fp.t]
 
-#     return fplist
+            # Longitudinal motion planning (Velocity keeping)
+            for tv in np.arange(TARGET_SPEED - D_T_S * N_S_SAMPLE,
+                                TARGET_SPEED + D_T_S * N_S_SAMPLE, D_T_S):
+                tfp = copy.deepcopy(fp)
+                lon_qp = QuarticPolynomial(s0, c_speed, 0.0, tv, 0.0, Ti)
 
+                tfp.s = [lon_qp.calc_point(t) for t in fp.t]
+                tfp.s_d = [lon_qp.calc_first_derivative(t) for t in fp.t]
+                tfp.s_dd = [lon_qp.calc_second_derivative(t) for t in fp.t]
+                tfp.s_ddd = [lon_qp.calc_third_derivative(t) for t in fp.t]
 
-# def check_collision(fp, ob):
-#     for i in range(len(ob[:, 0])):
-#         d = [((ix - ob[i, 0]) ** 2 + (iy - ob[i, 1]) ** 2)
-#              for (ix, iy) in zip(fp.x, fp.y)]
+                Jp = sum(np.power(tfp.d_ddd, 2))  # square of jerk
+                Js = sum(np.power(tfp.s_ddd, 2))  # square of jerk
 
-#         collision = any([di <= ROBOT_RADIUS ** 2 for di in d])
+                # square of diff from target speed
+                ds = (TARGET_SPEED - tfp.s_d[-1]) ** 2
 
-#         if collision:
-#             return False
+                tfp.cd = K_J * Jp + K_T * Ti + K_D * tfp.d[-1] ** 2
+                tfp.cv = K_J * Js + K_T * Ti + K_D * ds
+                tfp.cf = K_LAT * tfp.cd + K_LON * tfp.cv
 
-#     return True
+                frenet_paths.append(tfp)
 
-
-# def check_paths(fplist, ob):
-#     ok_ind = []
-#     for i, _ in enumerate(fplist):
-#         if any([v > MAX_SPEED for v in fplist[i].s_d]):  # Max speed check
-#             continue
-#         elif any([abs(a) > MAX_ACCEL for a in
-#                   fplist[i].s_dd]):  # Max accel check
-#             continue
-#         elif any([abs(c) > MAX_CURVATURE for c in
-#                   fplist[i].c]):  # Max curvature check
-#             continue
-#         elif not check_collision(fplist[i], ob):
-#             continue
-
-#         ok_ind.append(i)
-
-#     return [fplist[i] for i in ok_ind]
+    return frenet_paths
 
 
-# def frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob):
-#     fplist = calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0)
-#     fplist = calc_global_paths(fplist, csp)
-#     fplist = check_paths(fplist, ob)
+def calc_global_paths(fplist, csp):
+    for fp in fplist:
 
-#     # find minimum cost path
-#     min_cost = float("inf")
-#     best_path = None
-#     for fp in fplist:
-#         if min_cost >= fp.cf:
-#             min_cost = fp.cf
-#             best_path = fp
+        # calc global positions
+        for i in range(len(fp.s)):
+            ix, iy = csp.calc_position(fp.s[i])
+            if ix is None:
+                break
+            i_yaw = csp.calc_yaw(fp.s[i])
+            di = fp.d[i]
+            fx = ix + di * math.cos(i_yaw + math.pi / 2.0)
+            fy = iy + di * math.sin(i_yaw + math.pi / 2.0)
+            fp.x.append(fx)
+            fp.y.append(fy)
 
-#     return best_path
+        # calc yaw and ds
+        for i in range(len(fp.x) - 1):
+            dx = fp.x[i + 1] - fp.x[i]
+            dy = fp.y[i + 1] - fp.y[i]
+            fp.yaw.append(math.atan2(dy, dx))
+            fp.ds.append(math.hypot(dx, dy))
+
+        fp.yaw.append(fp.yaw[-1])
+        fp.ds.append(fp.ds[-1])
+
+        # calc curvature
+        for i in range(len(fp.yaw) - 1):
+            fp.c.append((fp.yaw[i + 1] - fp.yaw[i]) / fp.ds[i])
+
+    return fplist
 
 
-# def generate_target_course(x, y):
-#     csp = cubic_spline_planner.CubicSpline2D(x, y)
-#     s = np.arange(0, csp.s[-1], 0.1)
+def check_collision(fp, ob):
+    for i in range(len(ob[:, 0])):
+        d = [((ix - ob[i, 0]) ** 2 + (iy - ob[i, 1]) ** 2)
+             for (ix, iy) in zip(fp.x, fp.y)]
 
-#     rx, ry, ryaw, rk = [], [], [], []
-#     for i_s in s:
-#         ix, iy = csp.calc_position(i_s)
-#         rx.append(ix)
-#         ry.append(iy)
-#         ryaw.append(csp.calc_yaw(i_s))
-#         rk.append(csp.calc_curvature(i_s))
+        collision = any([di <= ROBOT_RADIUS ** 2 for di in d])
 
-#     return rx, ry, ryaw, rk, csp
+        if collision:
+            return False
+
+    return True
+
+
+def check_paths(fplist, ob):
+    ok_ind = []
+    for i, _ in enumerate(fplist):
+        if any([v > MAX_SPEED for v in fplist[i].s_d]):  # Max speed check
+            continue
+        elif any([abs(a) > MAX_ACCEL for a in
+                  fplist[i].s_dd]):  # Max accel check
+            continue
+        elif any([abs(c) > MAX_CURVATURE for c in
+                  fplist[i].c]):  # Max curvature check
+            continue
+        elif not check_collision(fplist[i], ob):
+            continue
+
+        ok_ind.append(i)
+
+    return [fplist[i] for i in ok_ind]
+
+
+def frenet_optimal_planning(csp, s0, c_speed, c_d, c_d_d, c_d_dd, ob):
+    fplist = calc_frenet_paths(c_speed, c_d, c_d_d, c_d_dd, s0)
+    fplist = calc_global_paths(fplist, csp)
+    fplist = check_paths(fplist, ob)
+
+    # find minimum cost path
+    min_cost = float("inf")
+    best_path = None
+    for fp in fplist:
+        if min_cost >= fp.cf:
+            min_cost = fp.cf
+            best_path = fp
+
+    return best_path
+
+
+def generate_target_course(x, y):
+    csp = CubicSpline2D(x, y)
+    s = np.arange(0, csp.s[-1], 0.1)
+
+    rx, ry, ryaw, rk = [], [], [], []
+    for i_s in s:
+        ix, iy = csp.calc_position(i_s)
+        rx.append(ix)
+        ry.append(iy)
+        ryaw.append(csp.calc_yaw(i_s))
+        rk.append(csp.calc_curvature(i_s))
+
+    return rx, ry, ryaw, rk, csp
 
 class FOT:  
     def __init__(self):
@@ -243,32 +243,32 @@ class FOT:
         self.s0 = 0.0  # current course position
 
         # read waypoint
-        # self.wpt_path = 'pkg/Oschersleben_mid_wp.csv'
-        # self.wpt_delimeter = ','
-        # self.wps, self.wp_num = self.load_wps()
-        # self.tx, selfty, self.tyaw, self.tc, self.csp = generate_target_course(wx, wy)
+        self.wpt_path = 'pkg/waypoint_files/Oschersleben_mid_wp.csv'
+        self.wpt_delimeter = ','
+        self.wps, self.wp_num = self.load_wps()
+        self.tx, self.selfty, self.tyaw, self.tc, self.csp = generate_target_course([i[0] for i in self.wps], [i[1] for i in self.wps]) #wx, wy
 
         # obs dect
+        self.scan_range = 1080
         self.scan_obs = []
         self.dect_obs = []
         self.len_obs = []
     
-    # def load_wps(self):
-    #     wpt_path = self.wpt_path
-    #     wpt_delimiter = self.wpt_delimeter
+    def load_wps(self):
+        wpt_path = self.wpt_path
+        wpt_delimiter = self.wpt_delimeter
 
-    #     file_wps = np.genfromtxt(wpt_path, delimiter=wpt_delimiter, dtype='float')
+        file_wps = np.genfromtxt(wpt_path, delimiter=wpt_delimiter, dtype='float')
 
-    #     temp_waypoint = []
-    #     wp_num = 0
-    #     for i in file_wps:
-    #         wps_point = [i[0], i[1], 0]
-    #         temp_waypoint.append(wps_point)
-    #         wp_num += 1
+        temp_waypoint = []
+        wp_num = 0
+        for i in file_wps:
+            wps_point = [i[0], i[1], 0]
+            temp_waypoint.append(wps_point)
+            wp_num += 1
 
-    #     return temp_waypoint, wp_num
+        return temp_waypoint, wp_num
 
-    
     # 1st loop
     def obs_dect(self, scan_origin):
         #for i in range(1, self.scan_range - 1):
@@ -329,100 +329,36 @@ class FOT:
                 obs_temp[5] = self.dect_obs[i][5]
                 self.len_obs.append(obs_temp)
 
-
-        theta = (int((self.len_obs[0][1] + self.len_obs[0][0])/2) - 180) * (4.7/1080)
-        _x = self.len_obs[0][5] * np.cos(theta)
-        _y = self.len_obs[0][5] * np.sin(theta)
-
-        return _x, _y
-
-    def define_obstacles(self, scan):
-        obstacles = []
+        if len(self.len_obs) == 0 :
+            result = [100,100]
         
-        i = 299
-        d_i = 0
-        while True:
-            if (i >= 799):
-                break
-            if scan[i] < 6.0:
-                
-                start_temp = scan[i]
-                start_idx_temp = i
-                end_temp = start_temp
-                end_idx_temp = i
-                max_temp = scan[i]
-                max_idx_temp = i
-                obstacle_count = 1
-                
-                while ((scan[i] < 6.0) and (i+1 < 799)):#self.scan_range
-                    i += 1
-                    end_temp += scan[i]
-                    obstacle_count += 1
-                    if scan[i] > max_temp:
-                        max_temp = scan[i]
-                        max_idx_temp = i
-                if scan[i] < 6.0:
-                    i += 1   
-                end_idx_temp = i
-                
-                # print('start:', start_idx_temp,'end:',end_idx_temp, end=" ")
+        else : 
+            theta = (int((self.len_obs[0][1] + self.len_obs[0][0])/2) - 180) * (4.7/1080)
+            _x = self.len_obs[0][5] * np.cos(theta)
+            _y = self.len_obs[0][5] * np.sin(theta)
+            result = [_x,_y]
 
-
-                distance_obstacle = end_temp/obstacle_count
-                
-                
-                a_k = ((6.0 - distance_obstacle)*np.exp(1/2))
-
-                angle_obstacle = (end_idx_temp - start_idx_temp)*0.00435
-
-                sigma_obstacle = np.arctan2((distance_obstacle * np.tan(angle_obstacle/2) + (0.3302/2)), distance_obstacle)
-
-                angle_obstacle_center = (int)((end_idx_temp - start_idx_temp)/2) + start_idx_temp 
-                angle_obstacle_center = angle_obstacle_center - 540
-
-                obstacle_inf = [angle_obstacle_center, sigma_obstacle, a_k]
-                
-                # print('angle_center',angle_obstacle_center,end=' ')
-                # print(sigma_obstacle)
-                obstacles.append(obstacle_inf)
         
-            
-            i += 1
-
-        # print(len(obstacles))
-        # print()
-
-        return obstacles
-
-
-            
-
-
+        return [result]
 
     # main
     def process_observation(self, ranges, ego_odom):
 
         # self.current_position = [odom_data['pose_x'], odom_data['pose_y'], odom_data['pose_theta']]
-        self.c_speed = ego_odom['linear_vel_x']
+        # self.c_speed = ego_odom['linear_vel_x']
 
 
         # obstacle 위치 업데이트
         ob = self.obs_dect(ranges)
-        # ob = self.define_obstacles(ranges)
 
-        print(ob)
-
-
-        
         # c_speed, c_d, c_d_d, c_d_dd, s0 업데이트
-        # path = frenet_optimal_planning(self.csp, self.s0, self.c_speed, self.c_d, self.c_d_d, self.c_d_dd, self.ob)
+        r = frenet_optimal_planning(self.csp, self.s0, self.c_speed, self.c_d, self.c_d_d, self.c_d_dd, ob)
 
         # self.s0 = path.s[1]
         # self.c_d = path.d[1]
         # self.c_d_d = path.d_d[1]
         # self.c_d_dd = path.d_dd[1]
         # self.c_speed = path.s_d[1]
-
 
 
         return 0, 0
