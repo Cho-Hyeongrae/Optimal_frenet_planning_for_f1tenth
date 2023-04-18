@@ -23,4 +23,4 @@ from pkg.fot import FrenetPlaner
 ```
 
 # Vedio
-<img width="80%" src="https://user-images.githubusercontent.com/16822641/109461495-913fc480-7aa5-11eb-9d0e-aff762669f98.gif"/>
+<img width="80%" src="https://github.com/Cho-Hyeongrae/Optimal_frenet_planning_for_f1tenth/blob/main/image/Screen%20Recording%202022-12-03%20at%209.07.49%20PM.gif"/>
