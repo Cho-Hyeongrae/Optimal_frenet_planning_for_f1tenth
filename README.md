@@ -1,4 +1,4 @@
-# f1tenth_overtake_FOT
+# f1tenth frenet path planning for gym
 
 ## Install Gym
 ```bash
