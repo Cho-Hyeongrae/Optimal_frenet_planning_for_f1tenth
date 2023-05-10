@@ -1,4 +1,4 @@
-# f1tenth frenet path planning for gym
+# frenet path planning for f1tenth gym
 
 ## Install Gym
 ```bash
