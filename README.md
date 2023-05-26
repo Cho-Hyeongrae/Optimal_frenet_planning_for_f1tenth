@@ -22,5 +22,5 @@ from pkg.drivers import DisparityExtender
 from pkg.fot import FrenetPlaner
 ```
 
-# Vedio
+# Video
 <img width="80%" src="https://github.com/Cho-Hyeongrae/Optimal_frenet_planning_for_f1tenth/blob/main/image/Screen%20Recording%202022-12-03%20at%209.07.49%20PM.gif"/>
